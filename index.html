@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keeping up with Marcus</title>
+  <meta name="description" content="Keeping up with Marcus.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="topbar">
+    New: the TEXIT party invite is live. <a href="texit/">RSVP now</a>
+  </div>
+
+  <header class="hero">
+    <a class="logo-block" href="./">
+      <span class="logo-main">KEEPING UP WITH MARCUS</span>
+      <span class="logo-sub">Moving to New York</span>
+    </a>
+
+    <nav class="nav" aria-label="Main">
+      <a href="texit/">TEXIT Party</a>
+      <a href="#updates">Updates</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <h1 class="headline" aria-hidden="true">MARCUS GOES NYC</h1>
+
+    <div class="hero-copy">
+      <h2>You're invited to the TEXIT party</h2>
+      <p>Marcus is leaving Texas for New York City. Come send him off.</p>
+    </div>
+
+    <a class="pill" href="texit/">Get the Invite &rarr;</a>
+  </header>
+
+  <main>
+    <section class="section" id="updates">
+      <h2>Featured</h2>
+      <div class="tiles">
+        <a class="tile tile-wide tile-a" href="texit/">
+          <small>Event · November</small>
+          <h3>TEXIT Party: You're invited to Marcus'</h3>
+        </a>
+        <div class="tile tile-b">
+          <small>Coming soon</small>
+          <h3>Moving Day Diaries</h3>
+        </div>
+        <div class="tile tile-c">
+          <small>Coming soon</small>
+          <h3>NYC Recommendations</h3>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="contact">
+    <div class="footer-cols">
+      <div>
+        <h4>Explore</h4>
+        <a href="texit/">TEXIT Party</a>
+        <a href="#updates">Updates</a>
+      </div>
+      <div>
+        <h4>About</h4>
+        <a href="#about">About Marcus</a>
+        <a href="mailto:Marcus@Albrook.com">Contact</a>
+      </div>
+      <div>
+        <h4>Follow</h4>
+        <a href="mailto:Marcus@Albrook.com">Email</a>
+      </div>
+    </div>
+    <p class="legal">&copy; <span id="year"></span> KeepingUpWithMarcus.com</p>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

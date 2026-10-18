@@ -1,0 +1,341 @@
+:root {
+  --red: #d7262e;
+  --white: #fff;
+  --black: #000;
+  --grey: #bdbdbd;
+  --dark: #111;
+  --line: #e4e4e4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--black);
+  font-family: "Franklin Gothic Extra Condensed", "Franklin Gothic Demi Cond", "Oswald", "Arial Narrow", sans-serif;
+  font-size: 18px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+/* Top bar */
+.topbar {
+  background: var(--white);
+  color: var(--black);
+  text-align: center;
+  font-size: 15px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar a {
+  font-weight: 700;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.topbar a:hover {
+  text-decoration: underline;
+}
+
+/* Hero: full-bleed, with the logo block and nav over the image */
+.hero {
+  position: relative;
+  min-height: calc(100vh - 40px);
+  color: var(--white);
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(255, 255, 255, 0.10), transparent 55%),
+    linear-gradient(160deg, #3b3026 0%, #1d1812 55%, #0b0907 100%);
+  overflow: hidden;
+}
+
+.logo-block {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  background: var(--red);
+  padding: 14px 22px 12px;
+  text-decoration: none;
+  color: var(--white);
+  text-align: center;
+}
+
+.logo-block .logo-main {
+  display: block;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.logo-block .logo-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Nav row, across the top of the hero */
+.nav {
+  position: absolute;
+  top: 26px;
+  left: 240px;
+  right: 24px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 22px;
+}
+
+.nav a {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--white);
+}
+
+.nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Giant headline */
+.headline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0 16px;
+  text-align: center;
+  color: var(--red);
+  font-size: clamp(4rem, 15vw, 13rem);
+  font-weight: 700;
+  line-height: 0.9;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Lower-left copy and button */
+.hero-copy {
+  position: absolute;
+  left: 24px;
+  bottom: 88px;
+  z-index: 2;
+  max-width: 560px;
+}
+
+.hero-copy h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.hero-copy p {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--grey);
+}
+
+/* Black pill, like the "Get 10% Off" button */
+.pill {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  background: var(--black);
+  color: var(--white);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.pill:hover {
+  background: var(--red);
+}
+
+/* Lower sections */
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 24px;
+}
+
+.section h2 {
+  margin: 0 0 20px;
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 300px;
+  padding: 22px;
+  color: var(--white);
+  text-decoration: none;
+  background: #222;
+}
+
+.tile-a {
+  background: linear-gradient(160deg, #3b3026, #0b0907);
+}
+
+.tile-b {
+  background: linear-gradient(160deg, #5a5a5a, #1a1a1a);
+}
+
+.tile-c {
+  background: var(--red);
+}
+
+.tile small {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.tile h3 {
+  margin: 6px 0 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.tile:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+/* Footer */
+.site-footer {
+  background: var(--black);
+  color: var(--white);
+  padding: 40px 24px 28px;
+}
+
+.footer-cols {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+.footer-cols h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.footer-cols a {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.footer-cols a:hover {
+  text-decoration: underline;
+}
+
+.legal {
+  max-width: 1200px;
+  margin: 32px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid #333;
+  font-size: 13px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+@media (min-width: 700px) {
+  .tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer-cols {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .tiles {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .tile-wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 720px) {
+  .logo-block {
+    position: static;
+    display: inline-block;
+  }
+
+  .nav {
+    position: static;
+    justify-content: center;
+    padding: 16px;
+    background: #000;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-bottom: 200px;
+  }
+
+  .headline {
+    position: relative;
+    top: auto;
+    transform: none;
+    padding-top: 60px;
+    font-size: 4.5rem;
+  }
+
+  .hero-copy {
+    bottom: 80px;
+  }
+}

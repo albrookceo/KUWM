@@ -51,8 +51,8 @@ a {
   min-height: calc(100vh - 40px);
   color: var(--white);
   background:
-    radial-gradient(ellipse at 30% 40%, rgba(255, 255, 255, 0.10), transparent 55%),
-    linear-gradient(160deg, #3b3026 0%, #1d1812 55%, #0b0907 100%);
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    url("images/hero.jpg") center / cover no-repeat;
   overflow: hidden;
 }
 
@@ -124,7 +124,7 @@ a {
   padding: 0 16px;
   text-align: center;
   color: var(--red);
-  font-size: clamp(2.5rem, 11vw, 13rem);
+  font-size: clamp(2.5rem, 9vw, 13rem);
   font-weight: 700;
   line-height: 0.9;
   text-transform: uppercase;

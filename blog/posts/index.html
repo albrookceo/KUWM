@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All posts · Keeping up with Marcus</title>
+  <meta name="description" content="Hot takes, white papers, and posts from Marcus.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../styles.css">
+  <link rel="stylesheet" href="../shared.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
+  <style>
+    .comments {
+      margin-top: 24px;
+    }
+    .comments h3 {
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .comment-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+    }
+    .comment {
+      border-left: 4px solid var(--black);
+      padding: 4px 0 4px 12px;
+      margin-bottom: 12px;
+    }
+    .comment-body {
+      margin: 4px 0 0;
+      white-space: pre-wrap;
+    }
+    .comment-form textarea {
+      width: 100%;
+      min-height: 90px;
+      font: inherit;
+      font-size: 16px;
+      padding: 10px;
+      border: 2px solid var(--black);
+      margin-bottom: 8px;
+    }
+    .delete-comment {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: none;
+      border: 0;
+      color: var(--red);
+      cursor: pointer;
+      padding: 0 0 0 8px;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero" style="min-height: auto; padding: 0;">
+    <a class="logo-block" href="../../">
+      <span class="logo-main">KEEPING UP WITH MARCUS</span>
+      <span class="logo-sub">DEN &rarr; PHX &rarr; ATX &rarr; NYC</span>
+    </a>
+  </header>
+
+  <main class="page">
+    <h1>All posts</h1>
+    <p class="meta"><a href="../">&larr; Blog home</a></p>
+    <p class="meta">
+      <span id="account"></span>
+      <a id="write-link" href="../new/" hidden>Write a post</a>
+    </p>
+
+    <div id="posts"></div>
+    <p id="status" class="status" role="status"></p>
+  </main>
+
+  <script type="module">
+    import { supabase } from "../../js/supabase.js";
+
+    const postsEl = document.getElementById("posts");
+    const statusEl = document.getElementById("status");
+    const accountEl = document.getElementById("account");
+    const writeLink = document.getElementById("write-link");
+
+    // Escape everything from the database before it goes into the page.
+    function paragraphs(text) {
+      return text
+        .split(/\n\s*\n/)
+        .map((p) => `<p>${escapeHtml(p.trim())}</p>`)
+        .join("");
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = value;
+      return div.innerHTML;
+    }
+
+    const TWO_HOURS = 2 * 60 * 60 * 1000;
+
+    function renderComment(comment, userId) {
+      const author = comment.profiles?.display_name ?? "Member";
+      const when = new Date(comment.created_at).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      // The database enforces the 2-hour rule. This only decides whether to show the button.
+      const isOwn = comment.author_id === userId;
+      const withinWindow = Date.now() - new Date(comment.created_at).getTime() < TWO_HOURS;
+      const deleteButton =
+        isOwn && withinWindow
+          ? `<button class="delete-comment" data-id="${comment.id}" type="button">Delete</button>`
+          : "";
+      return `
+        <li class="comment">
+          <p class="meta">${escapeHtml(author)} · ${when}${deleteButton}</p>
+          <p class="comment-body">${escapeHtml(comment.body)}</p>
+        </li>`;
+    }
+
+    function renderPost(post, comments, userId) {
+      const date = new Date(post.created_at).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const author = post.profiles?.display_name ?? "Marcus";
+      const badge = post.visibility === "members" ? `<span class="badge">Members</span>` : "";
+      const commentSection = userId
+        ? `
+          <section class="comments">
+            <h3>Comments</h3>
+            <ul class="comment-list">${comments.map((c) => renderComment(c, userId)).join("")}</ul>
+            <form class="comment-form" data-post-id="${post.id}">
+              <textarea required maxlength="2000" placeholder="Write a comment..."></textarea>
+              <button class="button" type="submit">Post comment</button>
+            </form>
+          </section>`
+        : `<p class="meta">Sign in to read and write comments.</p>`;
+      return `
+        <article class="post" id="post-${post.id}">
+          <h2>${escapeHtml(post.title)}${badge}</h2>
+          <p class="meta">${escapeHtml(author)} · ${date}</p>
+          <div class="body">${paragraphs(post.body)}</div>
+          ${commentSection}
+        </article>`;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    const userId = session?.user.id ?? null;
+
+    if (session) {
+      accountEl.textContent = `Signed in as ${session.user.email}.`;
+      writeLink.hidden = false;
+    } else {
+      accountEl.innerHTML = `<a href="../../login/">Sign in</a> to read member posts.`;
+    }
+
+    // Anonymous visitors only get public posts; signed-in members also get members-only posts.
+    const { data, error } = await supabase
+      .from("posts")
+      .select("id, title, body, visibility, created_at, profiles(display_name)")
+      .order("created_at", { ascending: false });
+
+    // Comments are members-only, so anonymous visitors get none back.
+    // If comments can't load, still show the posts.
+    const { data: comments, error: commentsError } = await supabase
+      .from("comments")
+      .select("id, post_id, author_id, body, created_at, profiles(display_name)")
+      .order("created_at", { ascending: true });
+
+    if (commentsError) {
+      console.warn("Comments unavailable:", commentsError.message);
+    }
+
+    if (error) {
+      statusEl.textContent = error.message;
+      statusEl.classList.add("error");
+    } else if (data.length === 0) {
+      postsEl.innerHTML = `<p class="empty">No posts yet.</p>`;
+    } else {
+      const commentsByPost = {};
+      for (const comment of comments ?? []) {
+        (commentsByPost[comment.post_id] ??= []).push(comment);
+      }
+      postsEl.innerHTML = data
+        .map((post) => renderPost(post, commentsByPost[post.id] ?? [], userId))
+        .join("");
+    }
+
+    postsEl.addEventListener("submit", async (event) => {
+      const form = event.target;
+      if (!form.classList.contains("comment-form")) return;
+      event.preventDefault();
+
+      const textarea = form.querySelector("textarea");
+      const button = form.querySelector("button");
+      const body = textarea.value.trim();
+      if (!body) return;
+
+      button.disabled = true;
+      const { error: insertError } = await supabase.from("comments").insert({
+        post_id: form.dataset.postId,
+        author_id: userId,
+        body,
+      });
+      button.disabled = false;
+
+      if (insertError) {
+        statusEl.textContent = insertError.message;
+        statusEl.classList.add("error");
+        return;
+      }
+      location.reload();
+    });
+
+    postsEl.addEventListener("click", async (event) => {
+      const button = event.target.closest(".delete-comment");
+      if (!button) return;
+
+      button.disabled = true;
+      const { data: deleted, error: deleteError } = await supabase
+        .from("comments")
+        .delete()
+        .eq("id", button.dataset.id)
+        .select();
+
+      if (deleteError) {
+        statusEl.textContent = deleteError.message;
+        statusEl.classList.add("error");
+        button.disabled = false;
+        return;
+      }
+      if (!deleted || deleted.length === 0) {
+        // The server found nothing to delete, so the 2-hour window has passed.
+        statusEl.textContent = "This comment can no longer be deleted. Comments can be deleted for 2 hours after posting.";
+        statusEl.classList.add("error");
+        button.remove();
+        return;
+      }
+      location.reload();
+    });
+  </script>
+</body>
+</html>

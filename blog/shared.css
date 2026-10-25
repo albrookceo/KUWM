@@ -91,9 +91,28 @@
 /* Site header shared by blog pages: top banner, then the black logo box. */
 .site-header {
   padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 .site-header .logo-block {
   position: static;
   display: inline-block;
   margin: 0;
+}
+/* Sign-out box, top right: same look as the logo box, same height. */
+.signout-block {
+  position: static;
+  margin: 0;
+  border: 0;
+  font-family: inherit;
+  padding: 23.4px 22px;
+  cursor: pointer;
+}
+.signout-block[hidden] {
+  display: none;
+}
+.signout-block:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

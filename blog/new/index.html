@@ -18,6 +18,9 @@
       <span class="logo-main">KEEPING UP WITH MARCUS</span>
       <span class="logo-sub">DEN &rarr; PHX &rarr; ATX &rarr; NYC</span>
     </a>
+    <button id="signout" class="logo-block signout-block" type="button" hidden>
+      <span class="logo-main">SIGN OUT</span>
+    </button>
   </header>
 
   <main class="page">
@@ -51,6 +54,8 @@
 
   <script type="module">
     import { supabase } from "../../js/supabase.js";
+    import { setupSignOut } from "../../js/signout.js";
+    setupSignOut(document.getElementById("signout"));
 
     const signedOut = document.getElementById("signed-out");
     const form = document.getElementById("post-form");

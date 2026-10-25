@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog · Keeping up with Marcus</title>
+  <meta name="description" content="Hot takes, white papers, and posts from Marcus.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="shared.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <header class="hero" style="min-height: auto; padding: 0;">
+    <a class="logo-block" href="../">
+      <span class="logo-main">KEEPING UP WITH MARCUS</span>
+      <span class="logo-sub">DEN &rarr; PHX &rarr; ATX &rarr; NYC</span>
+    </a>
+  </header>
+
+  <main class="page">
+    <h1>Blog</h1>
+    <p class="meta">
+      <span id="account"></span>
+      <a id="write-link" href="new/" hidden>Write a post</a>
+    </p>
+
+    <div id="posts"></div>
+    <p id="status" class="status" role="status"></p>
+  </main>
+
+  <script type="module">
+    import { supabase } from "../js/supabase.js";
+
+    const postsEl = document.getElementById("posts");
+    const statusEl = document.getElementById("status");
+    const accountEl = document.getElementById("account");
+    const writeLink = document.getElementById("write-link");
+
+    // Escape everything from the database before it goes into the page.
+    function paragraphs(text) {
+      return text
+        .split(/\n\s*\n/)
+        .map((p) => `<p>${escapeHtml(p.trim())}</p>`)
+        .join("");
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = value;
+      return div.innerHTML;
+    }
+
+    function renderPost(post) {
+      const date = new Date(post.created_at).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const author = post.profiles?.display_name ?? "Marcus";
+      const badge = post.visibility === "members" ? `<span class="badge">Members</span>` : "";
+      return `
+        <article class="post">
+          <h2>${escapeHtml(post.title)}${badge}</h2>
+          <p class="meta">${escapeHtml(author)} · ${date}</p>
+          <div class="body">${paragraphs(post.body)}</div>
+        </article>`;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (session) {
+      accountEl.textContent = `Signed in as ${session.user.email}.`;
+      writeLink.hidden = false;
+    } else {
+      accountEl.innerHTML = `<a href="../login/">Sign in</a> to read member posts.`;
+    }
+
+    // Anonymous visitors only get public posts; signed-in members also get members-only posts.
+    const { data, error } = await supabase
+      .from("posts")
+      .select("id, title, body, visibility, created_at, profiles(display_name)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      statusEl.textContent = error.message;
+      statusEl.classList.add("error");
+    } else if (data.length === 0) {
+      postsEl.innerHTML = `<p class="empty">No posts yet.</p>`;
+    } else {
+      postsEl.innerHTML = data.map(renderPost).join("");
+    }
+  </script>
+</body>
+</html>

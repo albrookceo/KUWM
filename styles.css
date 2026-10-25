@@ -68,6 +68,12 @@ a {
   text-align: center;
 }
 
+.blog-block {
+  left: auto;
+  right: 0;
+  padding: 23.4px 22px;
+}
+
 .logo-block .logo-main {
   display: block;
   font-size: 40px;

@@ -87,3 +87,13 @@
 .empty {
   color: #666;
 }
+
+/* Site header shared by blog pages: top banner, then the black logo box. */
+.site-header {
+  padding: 0;
+}
+.site-header .logo-block {
+  position: static;
+  display: inline-block;
+  margin: 0;
+}

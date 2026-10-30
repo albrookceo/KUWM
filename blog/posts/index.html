@@ -161,7 +161,7 @@
       accountEl.textContent = `Signed in as ${session.user.email}.`;
       writeLink.hidden = false;
     } else {
-      accountEl.innerHTML = `<a href="../../login/">Sign in</a> to read member posts.`;
+      accountEl.innerHTML = `<a href="../../login/?next=blog">Sign in</a> to read member posts.`;
     }
 
     // Anonymous visitors only get public posts; signed-in members also get members-only posts.

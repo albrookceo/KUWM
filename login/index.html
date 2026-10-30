@@ -94,6 +94,12 @@
   <script type="module">
     import { supabase } from "../js/supabase.js";
 
+    // Where the sign-in email should send people back to.
+    // Only known destinations are allowed, so the link can't be pointed elsewhere.
+    const destinations = { blog: "/blog/" };
+    const params = new URLSearchParams(location.search);
+    const returnPath = destinations[params.get("next")] ?? "/";
+
     const form = document.getElementById("login-form");
     const emailInput = document.getElementById("email");
     const sendButton = document.getElementById("send");
@@ -125,7 +131,7 @@
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${location.origin}/login/`,
+          emailRedirectTo: `${location.origin}${returnPath}`,
         },
       });
 

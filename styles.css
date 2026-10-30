@@ -68,9 +68,18 @@ a {
   text-align: center;
 }
 
-.blog-block {
-  left: auto;
+/* Top-right boxes (BLOG and SIGN IN) sit side by side in one container. */
+.hero-boxes {
+  position: absolute;
+  top: 0;
   right: 0;
+  z-index: 2;
+  display: flex;
+  gap: 12px;
+}
+
+.hero-boxes .logo-block {
+  position: static;
   padding: 23.4px 22px;
 }
 

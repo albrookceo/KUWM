@@ -239,6 +239,14 @@
       text-decoration: underline;
     }
 
+    .rec-list .by {
+      color: var(--gold-light);
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
     .empty {
       color: var(--muted);
       margin: 16px 0;
@@ -321,6 +329,30 @@
     .button:disabled {
       opacity: 0.6;
       cursor: default;
+    }
+
+    .checkbox-field {
+      text-align: left;
+    }
+
+    .checkbox-label {
+      display: flex !important;
+      align-items: center;
+      gap: 10px;
+      text-transform: none !important;
+      letter-spacing: 0.02em !important;
+      font-size: 1rem !important;
+      font-weight: 400 !important;
+      color: var(--cream) !important;
+      margin: 0 !important;
+      cursor: pointer;
+    }
+
+    .checkbox-label input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--gold);
     }
 
     .button-row {
@@ -441,7 +473,6 @@
   <main class="page">
     <div class="topbar">
       <a class="back" href="../">&larr; Keeping up with Marcus</a>
-      <button id="signout" class="signout" type="button" hidden>Sign out</button>
     </div>
 
     <div class="frame">
@@ -509,42 +540,51 @@
         <ul id="rec-list" class="rec-list"></ul>
         <p id="empty" class="empty" hidden>No recommendations yet. Be the first.</p>
 
-        <section id="add-section" class="add-form" hidden>
+        <section class="add-form">
           <h2>Add yours</h2>
           <form id="rec-form">
             <div class="field">
-              <label for="place">Place</label>
-              <input id="place" type="text" required maxlength="200" placeholder="Name of the spot">
+              <label for="name">Your name</label>
+              <input id="name" type="text" required maxlength="100" placeholder="How you'd like to be credited">
             </div>
             <div class="field">
-              <label for="why">Why you love it</label>
-              <textarea id="why" maxlength="2000" placeholder="What to order, what to see, why it's worth going"></textarea>
+              <label for="place">Place or memory title (optional)</label>
+              <input id="place" type="text" maxlength="200" placeholder="Name of the spot, or a short title">
+            </div>
+            <div class="field">
+              <label for="why">Your recommendation or favorite memory</label>
+              <textarea id="why" required maxlength="2000" placeholder="What to order, what to see, or a memory you love"></textarea>
+            </div>
+            <div class="field checkbox-field">
+              <label class="checkbox-label">
+                <input id="subscribe" type="checkbox">
+                Subscribe to Marcus's quarterly newsletter
+              </label>
+            </div>
+            <div id="email-field" class="field" hidden>
+              <label for="email">Email</label>
+              <input id="email" type="email" maxlength="254" autocomplete="email" placeholder="you@example.com">
             </div>
             <div class="button-row">
-              <button id="add" class="button" type="submit">Add recommendation</button>
+              <button id="add" class="button" type="submit">Submit</button>
             </div>
           </form>
         </section>
-
-        <p id="signed-out-note" class="signin-note" hidden>
-          <a href="../login/?next=recommendations">Sign in</a> to add your own recommendation.
-        </p>
       </div>
     </div>
   </main>
 
   <script type="module">
     import { supabase } from "../js/supabase.js";
-    import { setupSignOut } from "../js/signout.js";
-    setupSignOut(document.getElementById("signout"));
 
     const recList = document.getElementById("rec-list");
     const emptyEl = document.getElementById("empty");
     const statusEl = document.getElementById("status");
-    const addSection = document.getElementById("add-section");
-    const signedOutNote = document.getElementById("signed-out-note");
     const form = document.getElementById("rec-form");
     const addButton = document.getElementById("add");
+    const subscribeBox = document.getElementById("subscribe");
+    const emailField = document.getElementById("email-field");
+    const emailInput = document.getElementById("email");
 
     function escapeHtml(value) {
       const div = document.createElement("div");
@@ -557,19 +597,17 @@
       statusEl.classList.toggle("error", isError);
     }
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
-
-    if (session) {
-      addSection.hidden = false;
-    } else {
-      signedOutNote.hidden = false;
-    }
+    // The email box only appears when someone chooses to subscribe.
+    subscribeBox.addEventListener("change", () => {
+      emailField.hidden = !subscribeBox.checked;
+      emailInput.required = subscribeBox.checked;
+      if (!subscribeBox.checked) emailInput.value = "";
+    });
 
     async function loadList() {
       const { data, error } = await supabase
         .from("recommendations")
-        .select("id, place, body, author_id")
+        .select("id, place, body, author_name")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -584,50 +622,56 @@
       emptyEl.hidden = true;
       recList.innerHTML = data
         .map((rec) => {
-          const mine = session && rec.author_id === session.user.id;
-          const remove = mine
-            ? `<button class="delete" type="button" data-id="${rec.id}">Remove</button>`
-            : "";
           return `<li>
-            <h2>${escapeHtml(rec.place)}</h2>
+            ${rec.place ? `<h2>${escapeHtml(rec.place)}</h2>` : ""}
             ${rec.body ? `<p>${escapeHtml(rec.body)}</p>` : ""}
-            ${remove}
+            ${rec.author_name ? `<p class="by">&mdash; ${escapeHtml(rec.author_name)}</p>` : ""}
           </li>`;
         })
         .join("");
     }
 
-    recList.addEventListener("click", async (event) => {
-      const button = event.target.closest(".delete");
-      if (!button) return;
-      button.disabled = true;
-      const { error } = await supabase.from("recommendations").delete().eq("id", button.dataset.id);
-      if (error) {
-        setStatus(error.message, true);
-        button.disabled = false;
-        return;
-      }
-      loadList();
-    });
-
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       addButton.disabled = true;
-      setStatus("Adding...");
+      setStatus("Sending...");
+
+      const name = document.getElementById("name").value.trim();
+      const place = document.getElementById("place").value.trim();
+      const body = document.getElementById("why").value.trim();
+      const email = emailInput.value.trim();
+      const subscribe = subscribeBox.checked;
 
       const { error } = await supabase.from("recommendations").insert({
-        author_id: session.user.id,
-        place: document.getElementById("place").value.trim(),
-        body: document.getElementById("why").value.trim(),
+        author_name: name,
+        place: place || null,
+        body,
       });
 
-      addButton.disabled = false;
       if (error) {
+        addButton.disabled = false;
         setStatus(error.message, true);
         return;
       }
+
+      if (subscribe) {
+        const { error: subError } = await supabase
+          .from("newsletter_subscribers")
+          .insert({ email, name });
+        // A duplicate email means they already subscribed, which is fine.
+        if (subError && subError.code !== "23505") {
+          addButton.disabled = false;
+          setStatus("Your recommendation was posted, but we couldn't save your email: " + subError.message, true);
+          loadList();
+          return;
+        }
+      }
+
+      addButton.disabled = false;
       form.reset();
-      setStatus("Added.");
+      emailField.hidden = true;
+      emailInput.required = false;
+      setStatus(subscribe ? "Thanks! Your recommendation is posted and you're on the newsletter list." : "Thanks! Your recommendation is posted.");
       loadList();
     });
 

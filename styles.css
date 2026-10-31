@@ -170,6 +170,21 @@ a {
   color: var(--grey);
 }
 
+/* Box under the hero copy for the NYC send-off */
+.send-off-box {
+  display: inline-block;
+  margin-top: 16px;
+  background: var(--black);
+  color: var(--white);
+  padding: 14px 22px 12px;
+  text-decoration: none;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* Black pill, like the "Get 10% Off" button */
 .pill {
   position: absolute;

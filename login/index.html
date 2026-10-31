@@ -96,7 +96,7 @@
 
     // Where the sign-in email should send people back to.
     // Only known destinations are allowed, so the link can't be pointed elsewhere.
-    const destinations = { blog: "/blog/" };
+    const destinations = { blog: "/blog/", recommendations: "/recommendations/" };
     const params = new URLSearchParams(location.search);
     const returnPath = destinations[params.get("next")] ?? "/";
 

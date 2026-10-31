@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NYC Recommendations · Keeping up with Marcus</title>
+  <meta name="description" content="Favorite NYC recommendations sent in by friends of Marcus.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../blog/shared.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
+  <style>
+    .rec-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 40px;
+    }
+    .rec-list li {
+      border-top: 2px solid var(--black);
+      padding: 18px 0 22px;
+    }
+    .rec-list h2 {
+      font-size: 1.6rem;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+    .rec-list p {
+      margin: 0;
+      white-space: pre-wrap;
+    }
+    .rec-list .delete {
+      margin-top: 10px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: none;
+      border: 0;
+      padding: 0;
+      color: var(--red);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .add-form {
+      border-top: 2px solid var(--black);
+      padding-top: 24px;
+      margin-top: 24px;
+    }
+    .add-form h2 {
+      font-size: 1.6rem;
+      text-transform: uppercase;
+      margin: 0 0 16px;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo-block" href="../">
+      <span class="logo-main">KEEPING UP WITH MARCUS</span>
+      <span class="logo-sub">ATX</span>
+    </a>
+    <button id="signout" class="logo-block signout-block" type="button" hidden>
+      <span class="logo-main">SIGN OUT</span>
+    </button>
+  </header>
+
+  <main class="page">
+    <h1>NYC Recommendations</h1>
+    <p class="meta">Favorite spots to eat, drink, see, and do in New York City, from friends of Marcus.</p>
+
+    <p id="status" class="status" role="status"></p>
+    <ul id="rec-list" class="rec-list"></ul>
+    <p id="empty" class="empty" hidden>No recommendations yet. Be the first.</p>
+
+    <section id="add-section" class="add-form" hidden>
+      <h2>Add yours</h2>
+      <form id="rec-form">
+        <div class="field">
+          <label for="place">Place</label>
+          <input id="place" type="text" required maxlength="200" placeholder="Name of the spot">
+        </div>
+        <div class="field">
+          <label for="why">Why you love it</label>
+          <textarea id="why" maxlength="2000" placeholder="What to order, what to see, why it's worth going"></textarea>
+        </div>
+        <button id="add" class="button" type="submit">Add recommendation</button>
+      </form>
+    </section>
+
+    <p id="signed-out-note" class="meta" hidden>
+      <a href="../login/?next=recommendations">Sign in</a> to add your own recommendation.
+    </p>
+  </main>
+
+  <script type="module">
+    import { supabase } from "../js/supabase.js";
+    import { setupSignOut } from "../js/signout.js";
+    setupSignOut(document.getElementById("signout"));
+
+    const recList = document.getElementById("rec-list");
+    const emptyEl = document.getElementById("empty");
+    const statusEl = document.getElementById("status");
+    const addSection = document.getElementById("add-section");
+    const signedOutNote = document.getElementById("signed-out-note");
+    const form = document.getElementById("rec-form");
+    const addButton = document.getElementById("add");
+
+    function escapeHtml(value) {
+      const div = document.createElement("div");
+      div.textContent = value;
+      return div.innerHTML;
+    }
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.classList.toggle("error", isError);
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (session) {
+      addSection.hidden = false;
+    } else {
+      signedOutNote.hidden = false;
+    }
+
+    async function loadList() {
+      const { data, error } = await supabase
+        .from("recommendations")
+        .select("id, place, body, author_id")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        setStatus(error.message, true);
+        return;
+      }
+      if (data.length === 0) {
+        emptyEl.hidden = false;
+        recList.innerHTML = "";
+        return;
+      }
+      emptyEl.hidden = true;
+      recList.innerHTML = data
+        .map((rec) => {
+          const mine = session && rec.author_id === session.user.id;
+          const remove = mine
+            ? `<button class="delete" type="button" data-id="${rec.id}">Remove</button>`
+            : "";
+          return `<li>
+            <h2>${escapeHtml(rec.place)}</h2>
+            ${rec.body ? `<p>${escapeHtml(rec.body)}</p>` : ""}
+            ${remove}
+          </li>`;
+        })
+        .join("");
+    }
+
+    recList.addEventListener("click", async (event) => {
+      const button = event.target.closest(".delete");
+      if (!button) return;
+      button.disabled = true;
+      const { error } = await supabase.from("recommendations").delete().eq("id", button.dataset.id);
+      if (error) {
+        setStatus(error.message, true);
+        button.disabled = false;
+        return;
+      }
+      loadList();
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      addButton.disabled = true;
+      setStatus("Adding...");
+
+      const { error } = await supabase.from("recommendations").insert({
+        author_id: session.user.id,
+        place: document.getElementById("place").value.trim(),
+        body: document.getElementById("why").value.trim(),
+      });
+
+      addButton.disabled = false;
+      if (error) {
+        setStatus(error.message, true);
+        return;
+      }
+      form.reset();
+      setStatus("Added.");
+      loadList();
+    });
+
+    setStatus("Loading...");
+    await loadList();
+    if (statusEl.textContent === "Loading...") setStatus("");
+  </script>
+</body>
+</html>

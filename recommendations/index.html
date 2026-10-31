@@ -3,95 +3,534 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NYC Recommendations · Keeping up with Marcus</title>
+  <title>NYC Recommendations | Keeping up with Marcus</title>
   <meta name="description" content="Favorite NYC recommendations sent in by friends of Marcus.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css">
-  <link rel="stylesheet" href="../blog/shared.css">
+  <link href="https://fonts.googleapis.com/css2?family=Limelight&family=Josefin+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.min.js"></script>
   <style>
+    :root {
+      --ink: #0c0f0e;
+      --panel: #131917;
+      --gold: #c9a24a;
+      --gold-light: #e8cf86;
+      --cream: #f3ead7;
+      --muted: #a89f8a;
+      --rust: #d9785f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--ink);
+      color: var(--cream);
+      font-family: "Josefin Sans", "Futura", "Century Gothic", sans-serif;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* Dusk sky behind the whole page, matching the TEXIT invite */
+    .sky {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(180deg, #1b3fd1 0%, #3d5fe0 40%, #8f93ea 72%, #c3bff2 100%);
+    }
+
+    /* Midtown skyline with lit windows, anchored to the bottom of the viewport */
+    .skyline {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: auto;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 32px 16px 48px;
+    }
+
+    /* Top bar: home link on the left, sign-out on the right */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .back {
+      color: var(--cream);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .back:hover {
+      color: var(--gold-light);
+    }
+
+    .signout {
+      font: inherit;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: none;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    .signout[hidden] {
+      display: none;
+    }
+
+    /* Stepped double-rule frame */
+    .frame {
+      position: relative;
+      border: 2px solid var(--gold);
+      padding: 10px;
+      background: var(--panel);
+    }
+
+    .frame::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid var(--gold);
+      pointer-events: none;
+    }
+
+    .inner {
+      position: relative;
+      text-align: center;
+      padding: 48px 24px 40px;
+      background:
+        linear-gradient(180deg, rgba(201, 162, 74, 0.10), transparent 40%),
+        rgba(19, 25, 23, 0.88);
+    }
+
+    /* Fan crest with the Empire State Building, same as the TEXIT invite */
+    .crest {
+      display: block;
+      width: 240px;
+      max-width: 70%;
+      height: auto;
+      margin: 0 auto 8px;
+    }
+
+    .kicker {
+      margin: 0 0 12px;
+      color: var(--gold-light);
+      font-weight: 600;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    h1 {
+      font-family: "Limelight", "Didot", serif;
+      font-weight: 400;
+      font-size: clamp(1.6rem, 5.2vw, 2.5rem);
+      line-height: 1.1;
+      margin: 0 0 8px;
+      color: var(--gold);
+      letter-spacing: 0.02em;
+      overflow-wrap: break-word;
+      text-shadow: 0 2px 0 #7a5d22;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 20px auto 24px;
+      color: var(--gold);
+      font-size: 0.9rem;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      height: 1px;
+      width: 72px;
+      background: linear-gradient(90deg, transparent, var(--gold));
+    }
+
+    .divider::after {
+      background: linear-gradient(270deg, transparent, var(--gold));
+    }
+
+    .lede {
+      font-size: 1.1rem;
+      max-width: 480px;
+      margin: 0 auto 32px;
+      font-weight: 300;
+    }
+
+    .status {
+      min-height: 1.4em;
+      margin: 0 0 16px;
+      color: var(--gold-light);
+    }
+
+    .status.error {
+      color: var(--rust);
+    }
+
+    /* Recommendations as deco rows between gold rules */
     .rec-list {
       list-style: none;
       padding: 0;
-      margin: 0 0 40px;
-    }
-    .rec-list li {
-      border-top: 2px solid var(--black);
-      padding: 18px 0 22px;
-    }
-    .rec-list h2 {
-      font-size: 1.6rem;
-      text-transform: uppercase;
       margin: 0 0 8px;
+      border-bottom: 1px solid var(--gold);
+      text-align: left;
     }
+
+    .rec-list li {
+      padding: 20px 8px;
+    }
+
+    .rec-list li + li {
+      border-top: 1px solid rgba(201, 162, 74, 0.35);
+    }
+
+    .rec-list h2 {
+      font-family: "Limelight", "Didot", serif;
+      font-weight: 400;
+      font-size: 1.4rem;
+      color: var(--gold);
+      margin: 0 0 6px;
+      letter-spacing: 0.04em;
+    }
+
     .rec-list p {
       margin: 0;
+      font-size: 1.05rem;
       white-space: pre-wrap;
     }
+
     .rec-list .delete {
       margin-top: 10px;
       font: inherit;
-      font-size: 14px;
+      font-size: 0.75rem;
       font-weight: 700;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
       background: none;
       border: 0;
       padding: 0;
-      color: var(--red);
+      color: var(--rust);
       cursor: pointer;
       text-decoration: underline;
     }
-    .add-form {
-      border-top: 2px solid var(--black);
-      padding-top: 24px;
-      margin-top: 24px;
+
+    .empty {
+      color: var(--muted);
+      margin: 16px 0;
     }
+
+    /* Add form */
+    .add-form {
+      margin-top: 36px;
+      text-align: left;
+    }
+
     .add-form h2 {
+      font-family: "Limelight", "Didot", serif;
+      font-weight: 400;
       font-size: 1.6rem;
+      color: var(--gold);
+      text-align: center;
+      margin: 0 0 20px;
+      letter-spacing: 0.04em;
+    }
+
+    .field {
+      margin: 0 0 18px;
+    }
+
+    .field label {
+      display: block;
+      color: var(--gold);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
       text-transform: uppercase;
-      margin: 0 0 16px;
+      margin: 0 0 6px;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      font: inherit;
+      font-size: 1.05rem;
+      padding: 10px;
+      color: var(--cream);
+      background: rgba(12, 15, 14, 0.6);
+      border: 1px solid var(--gold);
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      outline: 2px solid var(--gold-light);
+      outline-offset: 1px;
+    }
+
+    .field textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    /* Gold stepped button, same as the RSVP button */
+    .button {
+      display: inline-block;
+      font: inherit;
+      color: var(--ink);
+      background: var(--gold);
+      border: 0;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+      padding: 16px 40px;
+      cursor: pointer;
+      clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+      transition: background 0.2s ease;
+    }
+
+    .button:hover:not(:disabled),
+    .button:focus-visible {
+      background: var(--gold-light);
+    }
+
+    .button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .button-row {
+      text-align: center;
+    }
+
+    .signin-note {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .signin-note a {
+      color: var(--gold-light);
     }
   </style>
 </head>
 <body>
-  <header class="site-header">
-    <a class="logo-block" href="../">
-      <span class="logo-main">KEEPING UP WITH MARCUS</span>
-      <span class="logo-sub">ATX</span>
-    </a>
-    <button id="signout" class="logo-block signout-block" type="button" hidden>
-      <span class="logo-main">SIGN OUT</span>
-    </button>
-  </header>
+  <div class="sky" aria-hidden="true"></div>
+
+  <svg class="skyline" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+  <defs>
+    <pattern id="wA" width="16" height="20" patternUnits="userSpaceOnUse">
+      <rect x="3" y="3" width="6" height="9" fill="#f6e7b4"/>
+      <rect x="11" y="3" width="6" height="9" fill="#f6e7b4"/>
+      <rect x="3" y="13" width="6" height="9" fill="#f6e7b4"/>
+      <rect x="11" y="13" width="6" height="9" fill="#f6e7b4"/>
+    </pattern>
+    <pattern id="wB" width="16" height="20" patternUnits="userSpaceOnUse">
+      <rect x="3" y="3" width="6" height="9" fill="#f6e7b4"/>
+      <rect x="11" y="13" width="6" height="9" fill="#f6e7b4"/>
+    </pattern>
+    <pattern id="wC" width="16" height="20" patternUnits="userSpaceOnUse">
+      <rect x="11" y="3" width="6" height="9" fill="#f6e7b4"/>
+      <rect x="3" y="13" width="6" height="9" fill="#f6e7b4"/>
+      <rect x="11" y="13" width="6" height="9" fill="#f6e7b4"/>
+    </pattern>
+  </defs>
+
+  <!-- back row, farther away, with varied rooftops -->
+  <g fill="#171e3f">
+    <path d="M0,300 V190 L60,182 L120,192 V300Z"/>
+    <path d="M110,300 V150 L150,138 L200,150 V300Z"/>
+    <path d="M200,300 V170 H310 V300Z"/>
+    <path d="M330,300 V130 L365,122 L430,130 V300Z"/>
+    <path d="M440,300 V180 H560 V300Z"/>
+    <path d="M690,300 V150 L745,142 L800,150 V300Z"/>
+    <path d="M820,300 V120 H920 V300Z"/>
+    <path d="M940,300 V170 H1060 V300Z"/>
+    <path d="M1080,300 V140 L1140,132 L1200,140 V300Z"/>
+  </g>
+
+  <!-- front row silhouettes -->
+  <g fill="#0b0d1a">
+    <path id="f1" d="M0,300 V156 L30,148 V300Z"/>
+    <path id="f2" d="M30,300 V200 L60,186 L90,200 V300Z"/>
+    <path id="f3" d="M90,300 V170 H112 V150 H118 V170 H140 V300Z"/>
+    <path id="f4" d="M140,300 V236 Q175,220 210,236 V300Z"/>
+    <path id="f5" d="M210,300 V190 H250 V300Z"/>
+    <rect x="229" y="170" width="1.5" height="20"/>
+    <path id="f6" d="M250,300 V150 L268,140 H310 V300Z"/>
+    <path id="f7" d="M310,300 V200 H380 V300Z"/>
+    <rect x="330" y="192" width="20" height="8"/>
+    <path id="f8" d="M380,300 V172 L430,160 V300Z"/>
+    <path id="f9" d="M430,300 V210 H490 V300Z"/>
+    <path id="f10" d="M490,300 V150 H560 V300Z"/>
+    <rect x="486" y="146" width="78" height="5"/>
+    <!-- Empire State Building -->
+    <rect x="556" y="210" width="80" height="90"/>
+    <rect x="568" y="160" width="56" height="140"/>
+    <rect x="578" y="124" width="36" height="176"/>
+    <rect x="586" y="92" width="28" height="208"/>
+    <rect x="592" y="74" width="16" height="226"/>
+    <rect x="598.5" y="40" width="3" height="260"/>
+    <polygon points="600,20 598.5,40 601.5,40"/>
+    <path id="r1" d="M650,300 V140 L668,130 H720 V300Z"/>
+    <rect x="670" y="122" width="16" height="8"/>
+    <path id="r2" d="M730,300 V170 L755,150 L780,170 V300Z"/>
+    <path id="r3" d="M790,300 V140 H805 V110 H835 V140 H850 V300Z"/>
+    <path id="r4" d="M860,300 V150 Q885,118 910,150 V300Z"/>
+    <path id="r5" d="M920,300 V122 Q950,100 980,122 V300Z"/>
+    <path id="r6" d="M990,300 V120 H998 V96 H1042 V120 H1050 V300Z"/>
+    <path id="r7" d="M1060,300 V170 L1110,182 V300Z"/>
+    <path id="r8" d="M1120,300 V200 H1160 V300Z"/>
+    <path id="r9" d="M1170,300 V160 H1200 V300Z"/>
+    <rect x="1180" y="152" width="10" height="8"/>
+  </g>
+
+  <!-- lit windows on the front row, following the same outlines -->
+  <g>
+    <use href="#f1" fill="url(#wA)"/>
+    <use href="#f2" fill="url(#wB)"/>
+    <use href="#f3" fill="url(#wC)"/>
+    <use href="#f4" fill="url(#wA)"/>
+    <use href="#f5" fill="url(#wB)"/>
+    <use href="#f6" fill="url(#wC)"/>
+    <use href="#f7" fill="url(#wA)"/>
+    <use href="#f8" fill="url(#wB)"/>
+    <use href="#f9" fill="url(#wC)"/>
+    <use href="#f10" fill="url(#wA)"/>
+    <rect x="556" y="210" width="80" height="90" fill="url(#wA)"/>
+    <rect x="568" y="160" width="56" height="140" fill="url(#wB)"/>
+    <rect x="578" y="124" width="36" height="176" fill="url(#wC)"/>
+    <rect x="586" y="92" width="28" height="208" fill="url(#wA)"/>
+    <rect x="592" y="74" width="16" height="226" fill="url(#wB)"/>
+    <use href="#r1" fill="url(#wC)"/>
+    <use href="#r2" fill="url(#wA)"/>
+    <use href="#r3" fill="url(#wC)"/>
+    <use href="#r4" fill="url(#wA)"/>
+    <use href="#r5" fill="url(#wB)"/>
+    <use href="#r6" fill="url(#wC)"/>
+    <use href="#r7" fill="url(#wA)"/>
+    <use href="#r8" fill="url(#wB)"/>
+    <use href="#r9" fill="url(#wC)"/>
+  </g>
+</svg>
 
   <main class="page">
-    <h1>NYC Recommendations</h1>
-    <p class="meta">Favorite spots to eat, drink, see, and do in New York City, from friends of Marcus.</p>
+    <div class="topbar">
+      <a class="back" href="../">&larr; Keeping up with Marcus</a>
+      <button id="signout" class="signout" type="button" hidden>Sign out</button>
+    </div>
 
-    <p id="status" class="status" role="status"></p>
-    <ul id="rec-list" class="rec-list"></ul>
-    <p id="empty" class="empty" hidden>No recommendations yet. Be the first.</p>
+    <div class="frame">
+      <div class="inner">
+        <svg class="crest" viewBox="0 0 240 140" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#c9a24a" stroke-width="1.5">
+          <!-- radiating fan, Chrysler Building crown style -->
+          <g transform="translate(120 130)">
+            <path d="M-110 0 A110 110 0 0 1 110 0"/>
+            <path d="M-90 0 A90 90 0 0 1 90 0"/>
+            <path d="M-70 0 A70 70 0 0 1 70 0"/>
+            <path d="M-50 0 A50 50 0 0 1 50 0"/>
+            <line x1="-50" y1="0" x2="50" y2="0"/>
+            <line x1="-110" y1="0" x2="110" y2="0" stroke-width="2"/>
+            <line x1="0" y1="0" x2="0" y2="-50" transform="rotate(-90)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(-75)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(-60)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(-45)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(-30)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(-15)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(15)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(30)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(45)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(60)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(75)"/>
+            <line x1="0" y1="-50" x2="0" y2="-110" transform="rotate(90)"/>
+          </g>
+          <!-- Empire State Building: stepped Art Deco profile with tall window slots -->
+          <g fill="#c9a24a" stroke="none">
+            <rect x="119.4" y="18" width="1.6" height="9"/>
+            <polygon points="119.2,26.6 120.8,26.6 124,39.9 116.3,39.9"/>
+            <rect x="115.3" y="39" width="9.6" height="2.4"/>
+            <rect x="114.1" y="41.5" width="12" height="2.4"/>
+            <rect x="111.8" y="43.9" width="16.4" height="7.7"/>
+            <rect x="108.8" y="51.6" width="22.8" height="48.3"/>
+            <rect x="106.4" y="99.9" width="27.5" height="22.6"/>
+            <rect x="103.5" y="107.9" width="2.9" height="14.6"/>
+            <rect x="133.9" y="107.9" width="2.9" height="14.6"/>
+            <rect x="97.5" y="122.5" width="45" height="7.5"/>
+          </g>
+          <g fill="#0c1210" stroke="none">
+            <rect x="114.1" y="47.5" width="1.8" height="4.1"/>
+            <rect x="124.2" y="47.5" width="2" height="4.1"/>
+            <rect x="110.3" y="53.2" width="1.7" height="45.3"/>
+            <rect x="113.7" y="53.2" width="2.1" height="45.3"/>
+            <rect x="119" y="47.8" width="2.1" height="48.3"/>
+            <rect x="124.7" y="53.2" width="2" height="45.3"/>
+            <rect x="128.1" y="53.2" width="2" height="45.3"/>
+            <rect x="114.1" y="100.2" width="1.9" height="21.1"/>
+            <rect x="117.7" y="100.2" width="1.9" height="21.1"/>
+            <rect x="120.8" y="100.2" width="2" height="21.1"/>
+            <rect x="124.2" y="100.2" width="2" height="21.1"/>
+          </g>
+        </svg>
 
-    <section id="add-section" class="add-form" hidden>
-      <h2>Add yours</h2>
-      <form id="rec-form">
-        <div class="field">
-          <label for="place">Place</label>
-          <input id="place" type="text" required maxlength="200" placeholder="Name of the spot">
-        </div>
-        <div class="field">
-          <label for="why">Why you love it</label>
-          <textarea id="why" maxlength="2000" placeholder="What to order, what to see, why it's worth going"></textarea>
-        </div>
-        <button id="add" class="button" type="submit">Add recommendation</button>
-      </form>
-    </section>
+        <p class="kicker">Public list</p>
+        <h1>NYC Recommendations</h1>
 
-    <p id="signed-out-note" class="meta" hidden>
-      <a href="../login/?next=recommendations">Sign in</a> to add your own recommendation.
-    </p>
+        <div class="divider" aria-hidden="true">&#9670;</div>
+
+        <p class="lede">
+          Favorite spots to eat, drink, see, and do in New York City, from friends of Marcus.
+        </p>
+
+        <p id="status" class="status" role="status"></p>
+        <ul id="rec-list" class="rec-list"></ul>
+        <p id="empty" class="empty" hidden>No recommendations yet. Be the first.</p>
+
+        <section id="add-section" class="add-form" hidden>
+          <h2>Add yours</h2>
+          <form id="rec-form">
+            <div class="field">
+              <label for="place">Place</label>
+              <input id="place" type="text" required maxlength="200" placeholder="Name of the spot">
+            </div>
+            <div class="field">
+              <label for="why">Why you love it</label>
+              <textarea id="why" maxlength="2000" placeholder="What to order, what to see, why it's worth going"></textarea>
+            </div>
+            <div class="button-row">
+              <button id="add" class="button" type="submit">Add recommendation</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="signed-out-note" class="signin-note" hidden>
+          <a href="../login/?next=recommendations">Sign in</a> to add your own recommendation.
+        </p>
+      </div>
+    </div>
   </main>
 
   <script type="module">
